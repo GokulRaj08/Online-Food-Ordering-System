@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crave - Full Stack Food Ordering</title>
+    <title>Crave — Full Stack Food Ordering System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -43,10 +42,6 @@
         .order-progress { transition: width 0.5s ease-in-out; }
         .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: skeleton 1.5s infinite; }
         @keyframes skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .typing-indicator span { animation: typing 1.4s infinite; display: inline-block; }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-dark antialiased">
@@ -272,20 +267,7 @@
             </div>
 
             <div id="loadingSkeleton" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                ${Array(6).fill(0).map(() => `
-                    <div class="bg-white rounded-2xl overflow-hidden shadow-sm">
-                        <div class="h-48 skeleton"></div>
-                        <div class="p-5 space-y-3">
-                            <div class="h-4 skeleton rounded w-3/4"></div>
-                            <div class="h-3 skeleton rounded w-full"></div>
-                            <div class="h-3 skeleton rounded w-2/3"></div>
-                            <div class="flex justify-between pt-2">
-                                <div class="h-4 skeleton rounded w-16"></div>
-                                <div class="h-8 skeleton rounded-full w-8"></div>
-                            </div>
-                        </div>
-                    </div>
-                `).join('')}
+                <!-- Skeleton items injected by JS -->
             </div>
 
             <div id="menuGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
@@ -550,7 +532,7 @@
                         <i class="fas fa-check text-2xl"></i>
                     </div>
                     <h2 class="text-2xl font-bold mb-1">Order Placed!</h2>
-                    <p class="text-white/80">Order #<span id="trackingOrderId"></span> confirmed</p>
+                    <p class="text-white/80">Order #<<span id="trackingOrderId"></span> confirmed</p>
                 </div>
             </div>
             <div class="p-6">
@@ -563,9 +545,7 @@
                 <div class="space-y-6" id="trackingSteps">
                     <div class="relative">
                         <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-                        <div class="space-y-6 relative" id="trackingTimeline">
-                            <!-- Injected by JS -->
-                        </div>
+                        <div class="space-y-6 relative" id="trackingTimeline"></div>
                     </div>
                 </div>
                 <div class="mt-6 p-4 bg-gray-50 rounded-xl">
@@ -655,33 +635,21 @@
                 </div>
             </div>
             <div class="border-t border-gray-800 mt-12 pt-8 text-center text-sm text-gray-500">
-                © 2026 Crave. Full Stack Demo Application.
+                © 2026 Crave. Full Stack Demo Application. Built by <a href="https://github.com/GokulRaj08" class="text-primary hover:underline">GokulRaj08</a>
             </div>
         </div>
     </footer>
 
     <script>
         // ==================== BACKEND SIMULATION ====================
-        // This simulates a real backend API with database, auth, and real-time features
-        
         const API = {
             baseUrl: 'https://api.crave.demo/v1',
             
-            // Auth
             async register(userData) {
                 await delay(800);
                 const users = JSON.parse(localStorage.getItem('craveUsers') || '[]');
-                if (users.find(u => u.email === userData.email)) {
-                    throw new Error('Email already registered');
-                }
-                const user = {
-                    id: 'user_' + Date.now(),
-                    ...userData,
-                    createdAt: new Date().toISOString(),
-                    addresses: [],
-                    orders: [],
-                    favorites: []
-                };
+                if (users.find(u => u.email === userData.email)) throw new Error('Email already registered');
+                const user = { id: 'user_' + Date.now(), ...userData, createdAt: new Date().toISOString(), addresses: [], orders: [], favorites: [] };
                 users.push(user);
                 localStorage.setItem('craveUsers', JSON.stringify(users));
                 return { token: this.generateToken(user), user: this.sanitizeUser(user) };
@@ -711,7 +679,6 @@
                 return this.sanitizeUser(users[idx]);
             },
 
-            // Orders
             async createOrder(token, orderData) {
                 await delay(1000);
                 const user = this.verifyToken(token);
@@ -727,21 +694,15 @@
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
-                
                 const orders = JSON.parse(localStorage.getItem('craveOrders') || '[]');
                 orders.push(order);
                 localStorage.setItem('craveOrders', JSON.stringify(orders));
-                
-                // Update user order history
                 const users = JSON.parse(localStorage.getItem('craveUsers') || '[]');
                 const uIdx = users.findIndex(u => u.id === user.id);
                 users[uIdx].orders = users[uIdx].orders || [];
                 users[uIdx].orders.push(order.id);
                 localStorage.setItem('craveUsers', JSON.stringify(users));
-                
-                // Simulate real-time status updates
                 this.simulateOrderProgress(order.id);
-                
                 return order;
             },
 
@@ -752,59 +713,25 @@
                 return orders.filter(o => o.userId === user.id).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             },
 
-            async getOrder(token, orderId) {
-                await delay(200);
-                this.verifyToken(token);
-                const orders = JSON.parse(localStorage.getItem('craveOrders') || '[]');
-                return orders.find(o => o.id === orderId);
-            },
-
-            // Menu
-            async getMenu() {
-                await delay(300);
-                return menuItems;
-            },
-
-            async getCategories() {
-                await delay(100);
-                return categories;
-            },
-
-            // Stats
             async getStats() {
                 await delay(200);
                 const orders = JSON.parse(localStorage.getItem('craveOrders') || '[]');
                 const today = new Date().toDateString();
                 const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === today);
                 const users = JSON.parse(localStorage.getItem('craveUsers') || '[]');
-                return {
-                    totalUsers: users.length,
-                    totalOrders: orders.length,
-                    todayOrders: todayOrders.length,
-                    activeUsers: Math.floor(users.length * 0.3) + 12
-                };
+                return { totalUsers: users.length, totalOrders: orders.length, todayOrders: todayOrders.length, activeUsers: Math.floor(users.length * 0.3) + 12 };
             },
 
-            // Helpers
-            generateToken(user) {
-                return btoa(JSON.stringify({ id: user.id, email: user.email, exp: Date.now() + 86400000 }));
-            },
-
+            generateToken(user) { return btoa(JSON.stringify({ id: user.id, email: user.email, exp: Date.now() + 86400000 })); },
             verifyToken(token) {
                 try {
                     const payload = JSON.parse(atob(token));
                     if (payload.exp < Date.now()) throw new Error('Token expired');
                     const users = JSON.parse(localStorage.getItem('craveUsers') || '[]');
                     return users.find(u => u.id === payload.id);
-                } catch {
-                    throw new Error('Invalid token');
-                }
+                } catch { throw new Error('Invalid token'); }
             },
-
-            sanitizeUser(user) {
-                const { password, ...safe } = user;
-                return safe;
-            },
+            sanitizeUser(user) { const { password, ...safe } = user; return safe; },
 
             simulateOrderProgress(orderId) {
                 const steps = [
@@ -813,37 +740,25 @@
                     { status: 'out_for_delivery', delay: 20000, note: 'Driver is on the way' },
                     { status: 'delivered', delay: 35000, note: 'Order delivered. Enjoy!' }
                 ];
-
-                steps.forEach((step, i) => {
+                steps.forEach((step) => {
                     setTimeout(() => {
                         const orders = JSON.parse(localStorage.getItem('craveOrders') || '[]');
                         const idx = orders.findIndex(o => o.id === orderId);
                         if (idx !== -1) {
                             orders[idx].status = step.status;
-                            orders[idx].statusHistory.push({
-                                status: step.status,
-                                time: new Date().toISOString(),
-                                note: step.note
-                            });
+                            orders[idx].statusHistory.push({ status: step.status, time: new Date().toISOString(), note: step.note });
                             orders[idx].updatedAt = new Date().toISOString();
                             localStorage.setItem('craveOrders', JSON.stringify(orders));
-                            
-                            // Broadcast to app
-                            if (window.appInstance) {
-                                window.appInstance.onOrderUpdate(orders[idx]);
-                            }
+                            if (window.appInstance) window.appInstance.onOrderUpdate(orders[idx]);
                         }
                     }, step.delay);
                 });
             }
         };
 
-        function delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
+        function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-        // ==================== APPLICATION ====================
-
+        // ==================== DATA ====================
         const categories = [
             { id: 'all', name: 'All', icon: 'fa-th-large' },
             { id: 'biriyani', name: 'Biriyani', icon: 'fa-bowl-rice', special: true },
@@ -857,290 +772,34 @@
         ];
 
         const menuItems = [
-            {
-                id: 101,
-                name: 'Hyderabadi Dum Biriyani',
-                category: 'biriyani',
-                price: 18.99,
-                rating: 4.9,
-                reviews: 456,
-                image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=800&q=80',
-                description: 'Authentic Hyderabadi style with basmati rice, tender lamb, saffron, and aromatic whole spices slow-cooked in the traditional dum method.',
-                tags: ['Chef\'s Special', 'Spicy'],
-                calories: 950,
-                time: '40-50 min',
-                spiceLevel: 3
-            },
-            {
-                id: 102,
-                name: 'Lucknowi Chicken Biriyani',
-                category: 'biriyani',
-                price: 16.99,
-                rating: 4.8,
-                reviews: 389,
-                image: 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?w=800&q=80',
-                description: 'Delicate Awadhi style with fragrant basmati rice, succulent chicken, kewra water, and mace. Mildly spiced with a royal touch.',
-                tags: ['Popular', 'Mild'],
-                calories: 820,
-                time: '35-45 min',
-                spiceLevel: 1
-            },
-            {
-                id: 103,
-                name: 'Kolkata Mutton Biriyani',
-                category: 'biriyani',
-                price: 19.99,
-                rating: 4.9,
-                reviews: 312,
-                image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=800&q=80',
-                description: 'Iconic Kolkata style with potato, boiled egg, and tender mutton. Distinctive light yellow color with subtle sweetness and nutmeg.',
-                tags: ['Must Try', 'Signature'],
-                calories: 980,
-                time: '45-55 min',
-                spiceLevel: 2
-            },
-            {
-                id: 104,
-                name: 'Malabar Fish Biriyani',
-                category: 'biriyani',
-                price: 17.99,
-                rating: 4.7,
-                reviews: 267,
-                image: 'https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=800&q=80',
-                description: 'Kerala style with fresh seer fish, jeerakasala rice, coconut, curry leaves, and Malabar spices. Served with raita and pickle.',
-                tags: ['Coastal', 'Medium'],
-                calories: 750,
-                time: '35-40 min',
-                spiceLevel: 2
-            },
-            {
-                id: 105,
-                name: 'Paneer Tikka Biriyani',
-                category: 'biriyani',
-                price: 15.99,
-                rating: 4.6,
-                reviews: 198,
-                image: 'https://images.unsplash.com/photo-1642821373181-696a54913e93?w=800&q=80',
-                description: 'Vegetarian delight with marinated paneer tikka, basmati rice, and roasted vegetables. Topped with fried onions and mint.',
-                tags: ['Vegetarian', 'Grilled'],
-                calories: 680,
-                time: '30-40 min',
-                spiceLevel: 2
-            },
-            {
-                id: 106,
-                name: 'Egg Biriyani',
-                category: 'biriyani',
-                price: 13.99,
-                rating: 4.5,
-                reviews: 156,
-                image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=800&q=80',
-                description: 'Comfort food with boiled eggs, fragrant rice, caramelized onions, and house blend spices. Served with salan and raita.',
-                tags: ['Budget Friendly', 'Classic'],
-                calories: 620,
-                time: '25-35 min',
-                spiceLevel: 2
-            },
-            {
-                id: 1,
-                name: 'Margherita Supreme',
-                category: 'pizza',
-                price: 14.99,
-                rating: 4.8,
-                reviews: 234,
-                image: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=800&q=80',
-                description: 'Fresh mozzarella, San Marzano tomatoes, basil, and extra virgin olive oil on our hand-tossed crust.',
-                tags: ['Popular', 'Vegetarian'],
-                calories: 850,
-                time: '25-30 min'
-            },
-            {
-                id: 2,
-                name: 'Classic Cheeseburger',
-                category: 'burger',
-                price: 12.99,
-                rating: 4.6,
-                reviews: 189,
-                image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80',
-                description: 'Juicy beef patty with melted cheddar, lettuce, tomato, pickles, and our signature sauce.',
-                tags: ['Best Seller'],
-                calories: 720,
-                time: '20-25 min'
-            },
-            {
-                id: 3,
-                name: 'Dragon Roll',
-                category: 'sushi',
-                price: 16.99,
-                rating: 4.9,
-                reviews: 156,
-                image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800&q=80',
-                description: 'Shrimp tempura and cucumber inside, topped with eel, avocado, and eel sauce.',
-                tags: ['Chef\'s Pick'],
-                calories: 480,
-                time: '30-35 min'
-            },
-            {
-                id: 4,
-                name: 'Truffle Pasta',
-                category: 'pasta',
-                price: 18.99,
-                rating: 4.7,
-                reviews: 98,
-                image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&q=80',
-                description: 'Creamy fettuccine with black truffle oil, parmesan, and wild mushrooms.',
-                tags: ['Premium'],
-                calories: 650,
-                time: '25-30 min'
-            },
-            {
-                id: 5,
-                name: 'Caesar Salad',
-                category: 'salad',
-                price: 10.99,
-                rating: 4.5,
-                reviews: 145,
-                image: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=800&q=80',
-                description: 'Crisp romaine lettuce, parmesan cheese, croutons, and our house-made Caesar dressing.',
-                tags: ['Healthy', 'Vegetarian'],
-                calories: 320,
-                time: '15-20 min'
-            },
-            {
-                id: 6,
-                name: 'Chocolate Lava Cake',
-                category: 'dessert',
-                price: 8.99,
-                rating: 4.9,
-                reviews: 312,
-                image: 'https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=800&q=80',
-                description: 'Warm chocolate cake with a molten center, served with vanilla ice cream.',
-                tags: ['Must Try'],
-                calories: 450,
-                time: '15-20 min'
-            },
-            {
-                id: 7,
-                name: 'Pepperoni Feast',
-                category: 'pizza',
-                price: 16.99,
-                rating: 4.7,
-                reviews: 278,
-                image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=800&q=80',
-                description: 'Double pepperoni, mozzarella, and our signature tomato sauce on a crispy crust.',
-                tags: ['Popular'],
-                calories: 980,
-                time: '25-30 min'
-            },
-            {
-                id: 8,
-                name: 'BBQ Bacon Burger',
-                category: 'burger',
-                price: 15.99,
-                rating: 4.6,
-                reviews: 167,
-                image: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=800&q=80',
-                description: 'Beef patty with crispy bacon, onion rings, BBQ sauce, and cheddar cheese.',
-                tags: ['New'],
-                calories: 890,
-                time: '20-25 min'
-            },
-            {
-                id: 9,
-                name: 'Salmon Sashimi',
-                category: 'sushi',
-                price: 19.99,
-                rating: 4.8,
-                reviews: 134,
-                image: 'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=800&q=80',
-                description: 'Premium Norwegian salmon, expertly sliced and served with wasabi and pickled ginger.',
-                tags: ['Premium', 'Gluten Free'],
-                calories: 280,
-                time: '20-25 min'
-            },
-            {
-                id: 10,
-                name: 'Berry Smoothie',
-                category: 'drinks',
-                price: 6.99,
-                rating: 4.7,
-                reviews: 89,
-                image: 'https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?w=800&q=80',
-                description: 'Mixed berries, banana, Greek yogurt, and honey blended to perfection.',
-                tags: ['Healthy', 'Vegetarian'],
-                calories: 220,
-                time: '10-15 min'
-            },
-            {
-                id: 11,
-                name: 'Mushroom Risotto',
-                category: 'pasta',
-                price: 17.99,
-                rating: 4.6,
-                reviews: 112,
-                image: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=800&q=80',
-                description: 'Creamy Arborio rice with wild mushrooms, parmesan, and white wine.',
-                tags: ['Vegetarian'],
-                calories: 580,
-                time: '30-35 min'
-            },
-            {
-                id: 12,
-                name: 'Tiramisu',
-                category: 'dessert',
-                price: 9.99,
-                rating: 4.8,
-                reviews: 198,
-                image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=800&q=80',
-                description: 'Classic Italian dessert with espresso-soaked ladyfingers and mascarpone cream.',
-                tags: ['Popular'],
-                calories: 380,
-                time: '15-20 min'
-            }
+            { id: 101, name: 'Hyderabadi Dum Biriyani', category: 'biriyani', price: 18.99, rating: 4.9, reviews: 456, image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=800&q=80', description: 'Authentic Hyderabadi style with basmati rice, tender lamb, saffron, and aromatic whole spices slow-cooked in the traditional dum method.', tags: ['Chef\'s Special', 'Spicy'], calories: 950, time: '40-50 min', spiceLevel: 3 },
+            { id: 102, name: 'Lucknowi Chicken Biriyani', category: 'biriyani', price: 16.99, rating: 4.8, reviews: 389, image: 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?w=800&q=80', description: 'Delicate Awadhi style with fragrant basmati rice, succulent chicken, kewra water, and mace. Mildly spiced with a royal touch.', tags: ['Popular', 'Mild'], calories: 820, time: '35-45 min', spiceLevel: 1 },
+            { id: 103, name: 'Kolkata Mutton Biriyani', category: 'biriyani', price: 19.99, rating: 4.9, reviews: 312, image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=800&q=80', description: 'Iconic Kolkata style with potato, boiled egg, and tender mutton. Distinctive light yellow color with subtle sweetness and nutmeg.', tags: ['Must Try', 'Signature'], calories: 980, time: '45-55 min', spiceLevel: 2 },
+            { id: 104, name: 'Malabar Fish Biriyani', category: 'biriyani', price: 17.99, rating: 4.7, reviews: 267, image: 'https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=800&q=80', description: 'Kerala style with fresh seer fish, jeerakasala rice, coconut, curry leaves, and Malabar spices. Served with raita and pickle.', tags: ['Coastal', 'Medium'], calories: 750, time: '35-40 min', spiceLevel: 2 },
+            { id: 105, name: 'Paneer Tikka Biriyani', category: 'biriyani', price: 15.99, rating: 4.6, reviews: 198, image: 'https://images.unsplash.com/photo-1642821373181-696a54913e93?w=800&q=80', description: 'Vegetarian delight with marinated paneer tikka, basmati rice, and roasted vegetables. Topped with fried onions and mint.', tags: ['Vegetarian', 'Grilled'], calories: 680, time: '30-40 min', spiceLevel: 2 },
+            { id: 106, name: 'Egg Biriyani', category: 'biriyani', price: 13.99, rating: 4.5, reviews: 156, image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=800&q=80', description: 'Comfort food with boiled eggs, fragrant rice, caramelized onions, and house blend spices. Served with salan and raita.', tags: ['Budget Friendly', 'Classic'], calories: 620, time: '25-35 min', spiceLevel: 2 },
+            { id: 1, name: 'Margherita Supreme', category: 'pizza', price: 14.99, rating: 4.8, reviews: 234, image: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=800&q=80', description: 'Fresh mozzarella, San Marzano tomatoes, basil, and extra virgin olive oil on our hand-tossed crust.', tags: ['Popular', 'Vegetarian'], calories: 850, time: '25-30 min' },
+            { id: 2, name: 'Classic Cheeseburger', category: 'burger', price: 12.99, rating: 4.6, reviews: 189, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80', description: 'Juicy beef patty with melted cheddar, lettuce, tomato, pickles, and our signature sauce.', tags: ['Best Seller'], calories: 720, time: '20-25 min' },
+            { id: 3, name: 'Dragon Roll', category: 'sushi', price: 16.99, rating: 4.9, reviews: 156, image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800&q=80', description: 'Shrimp tempura and cucumber inside, topped with eel, avocado, and eel sauce.', tags: ['Chef\'s Pick'], calories: 480, time: '30-35 min' },
+            { id: 4, name: 'Truffle Pasta', category: 'pasta', price: 18.99, rating: 4.7, reviews: 98, image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&q=80', description: 'Creamy fettuccine with black truffle oil, parmesan, and wild mushrooms.', tags: ['Premium'], calories: 650, time: '25-30 min' },
+            { id: 5, name: 'Caesar Salad', category: 'salad', price: 10.99, rating: 4.5, reviews: 145, image: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=800&q=80', description: 'Crisp romaine lettuce, parmesan cheese, croutons, and our house-made Caesar dressing.', tags: ['Healthy', 'Vegetarian'], calories: 320, time: '15-20 min' },
+            { id: 6, name: 'Chocolate Lava Cake', category: 'dessert', price: 8.99, rating: 4.9, reviews: 312, image: 'https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=800&q=80', description: 'Warm chocolate cake with a molten center, served with vanilla ice cream.', tags: ['Must Try'], calories: 450, time: '15-20 min' },
+            { id: 7, name: 'Pepperoni Feast', category: 'pizza', price: 16.99, rating: 4.7, reviews: 278, image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=800&q=80', description: 'Double pepperoni, mozzarella, and our signature tomato sauce on a crispy crust.', tags: ['Popular'], calories: 980, time: '25-30 min' },
+            { id: 8, name: 'BBQ Bacon Burger', category: 'burger', price: 15.99, rating: 4.6, reviews: 167, image: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=800&q=80', description: 'Beef patty with crispy bacon, onion rings, BBQ sauce, and cheddar cheese.', tags: ['New'], calories: 890, time: '20-25 min' },
+            { id: 9, name: 'Salmon Sashimi', category: 'sushi', price: 19.99, rating: 4.8, reviews: 134, image: 'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=800&q=80', description: 'Premium Norwegian salmon, expertly sliced and served with wasabi and pickled ginger.', tags: ['Premium', 'Gluten Free'], calories: 280, time: '20-25 min' },
+            { id: 10, name: 'Berry Smoothie', category: 'drinks', price: 6.99, rating: 4.7, reviews: 89, image: 'https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?w=800&q=80', description: 'Mixed berries, banana, Greek yogurt, and honey blended to perfection.', tags: ['Healthy', 'Vegetarian'], calories: 220, time: '10-15 min' },
+            { id: 11, name: 'Mushroom Risotto', category: 'pasta', price: 17.99, rating: 4.6, reviews: 112, image: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=800&q=80', description: 'Creamy Arborio rice with wild mushrooms, parmesan, and white wine.', tags: ['Vegetarian'], calories: 580, time: '30-35 min' },
+            { id: 12, name: 'Tiramisu', category: 'dessert', price: 9.99, rating: 4.8, reviews: 198, image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=800&q=80', description: 'Classic Italian dessert with espresso-soaked ladyfingers and mascarpone cream.', tags: ['Popular'], calories: 380, time: '15-20 min' }
         ];
 
         const deals = [
-            {
-                id: 'deal1',
-                title: 'Biriyani Feast Friday',
-                description: 'Get 2 Hyderabadi Biriyanis for $29.99! Perfect for sharing with family and friends.',
-                discount: 'BOGO',
-                code: 'BIRYANI25',
-                image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=800&q=80',
-                validUntil: 'Fridays Only',
-                category: 'biriyani'
-            },
-            {
-                id: 'deal2',
-                title: 'Free Delivery',
-                description: 'Enjoy free delivery on all orders above $25. No code needed!',
-                discount: 'FREE',
-                code: 'FREEDEL',
-                image: 'https://images.unsplash.com/photo-1526367790999-015075668a5a?w=800&q=80',
-                validUntil: 'This Week'
-            },
-            {
-                id: 'deal3',
-                title: '20% Off First Order',
-                description: 'New customers get 20% off their first order. Welcome to Crave!',
-                discount: '20% OFF',
-                code: 'WELCOME20',
-                image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80',
-                validUntil: 'Limited Time'
-            },
-            {
-                id: 'deal4',
-                title: 'Family Feast Bundle',
-                description: '2 Large Pizzas + 4 Drinks + 2 Desserts for only $49.99',
-                discount: '$49.99',
-                code: 'FAMILY',
-                image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80',
-                validUntil: 'Weekends'
-            }
+            { id: 'deal1', title: 'Biriyani Feast Friday', description: 'Get 2 Hyderabadi Biriyanis for $29.99! Perfect for sharing with family and friends.', discount: 'BOGO', code: 'BIRYANI25', image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=800&q=80', validUntil: 'Fridays Only', category: 'biriyani' },
+            { id: 'deal2', title: 'Free Delivery', description: 'Enjoy free delivery on all orders above $25. No code needed!', discount: 'FREE', code: 'FREEDEL', image: 'https://images.unsplash.com/photo-1526367790999-015075668a5a?w=800&q=80', validUntil: 'This Week' },
+            { id: 'deal3', title: '20% Off First Order', description: 'New customers get 20% off their first order. Welcome to Crave!', discount: '20% OFF', code: 'WELCOME20', image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80', validUntil: 'Limited Time' },
+            { id: 'deal4', title: 'Family Feast Bundle', description: '2 Large Pizzas + 4 Drinks + 2 Desserts for only $49.99', discount: '$49.99', code: 'FAMILY', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80', validUntil: 'Weekends' }
         ];
 
         // ==================== APP CONTROLLER ====================
-
         const app = {
             cart: [],
             orders: [],
@@ -1152,7 +811,6 @@
             user: null,
             token: null,
             authMode: 'login',
-            socket: null,
             currentOrderFilter: 'all',
             searchTimeout: null,
             liveOrderId: null,
@@ -1160,7 +818,6 @@
             async init() {
                 window.appInstance = this;
                 this.loadSession();
-                this.setupSocket();
                 this.renderCategories();
                 this.renderDeals();
                 this.updateAuthUI();
@@ -1168,48 +825,11 @@
                 this.loadCart();
                 this.loadFavorites();
                 this.updateStats();
-                
-                // Simulate loading
                 this.showSkeleton();
                 await delay(800);
                 this.hideSkeleton();
                 this.renderMenu();
-                
-                // Check for active orders
                 this.checkActiveOrders();
-            },
-
-            setupSocket() {
-                // Simulate Socket.io connection for real-time updates
-                this.socket = {
-                    on: (event, callback) => {
-                        this.socketHandlers = this.socketHandlers || {};
-                        this.socketHandlers[event] = callback;
-                    },
-                    emit: (event, data) => {
-                        console.log('Socket emit:', event, data);
-                    }
-                };
-                
-                // Simulate incoming events
-                setInterval(() => {
-                    if (this.liveOrderId && Math.random() > 0.7) {
-                        this.simulateDriverLocation();
-                    }
-                }, 5000);
-            },
-
-            simulateDriverLocation() {
-                const statuses = [
-                    { text: 'Driver is 5 minutes away', progress: 75 },
-                    { text: 'Driver is approaching', progress: 90 },
-                    { text: 'Driver is nearby', progress: 95 }
-                ];
-                const random = statuses[Math.floor(Math.random() * statuses.length)];
-                if (document.getElementById('liveTracking').classList.contains('translate-y-0')) {
-                    document.getElementById('liveStatus').textContent = random.text;
-                    document.getElementById('liveProgress').style.width = random.progress + '%';
-                }
             },
 
             loadSession() {
@@ -1222,11 +842,8 @@
             },
 
             saveSession() {
-                if (this.user && this.token) {
-                    localStorage.setItem('craveSession', JSON.stringify({ token: this.token, user: this.user }));
-                } else {
-                    localStorage.removeItem('craveSession');
-                }
+                if (this.user && this.token) localStorage.setItem('craveSession', JSON.stringify({ token: this.token, user: this.user }));
+                else localStorage.removeItem('craveSession');
             },
 
             loadCart() {
@@ -1248,7 +865,6 @@
             },
 
             // ==================== AUTH ====================
-
             showAuth() {
                 document.getElementById('authModal').classList.remove('hidden');
                 this.setAuthMode('login');
@@ -1288,7 +904,6 @@
                         const name = document.getElementById('authName').value;
                         const phone = document.getElementById('authPhone').value;
                         if (!name) throw new Error('Name is required');
-                        
                         const result = await API.register({ name, email, password, phone });
                         this.token = result.token;
                         this.user = result.user;
@@ -1314,13 +929,7 @@
 
             socialAuth(provider) {
                 this.showToast(`${provider} authentication simulated`);
-                // Simulate social login
-                const mockUser = {
-                    id: 'social_' + Date.now(),
-                    name: provider === 'google' ? 'Google User' : 'GitHub User',
-                    email: 'user@' + provider + '.com',
-                    avatar: `https://ui-avatars.com/api/?name=${provider}&background=random`
-                };
+                const mockUser = { id: 'social_' + Date.now(), name: provider === 'google' ? 'Google User' : 'GitHub User', email: 'user@' + provider + '.com', avatar: `https://ui-avatars.com/api/?name=${provider}&background=random` };
                 this.token = API.generateToken(mockUser);
                 this.user = API.sanitizeUser(mockUser);
                 this.saveSession();
@@ -1340,7 +949,6 @@
             updateAuthUI() {
                 const userSection = document.getElementById('userSection');
                 const loginBtn = document.getElementById('loginBtn');
-                
                 if (this.user) {
                     userSection.classList.remove('hidden');
                     userSection.classList.add('flex');
@@ -1362,27 +970,22 @@
                         this.favorites = profile.favorites;
                         this.saveFavorites();
                     }
-                } catch (e) {
-                    console.error('Sync failed', e);
-                }
+                } catch (e) { console.error('Sync failed', e); }
             },
 
             // ==================== PROFILE ====================
-
             showProfile() {
                 if (!this.user) { this.showAuth(); return; }
                 this.hideAllSections();
                 document.getElementById('profileSection').classList.remove('hidden');
                 document.getElementById('heroSection').classList.add('hidden');
                 document.getElementById('biriyaniBanner').classList.add('hidden');
-                
                 document.getElementById('profileName').textContent = this.user.name;
                 document.getElementById('profileEmail').textContent = this.user.email;
                 document.getElementById('profileJoinDate').textContent = new Date(this.user.createdAt).getFullYear();
                 document.getElementById('editName').value = this.user.name;
                 document.getElementById('editPhone').value = this.user.phone || '';
                 document.getElementById('editAddress').value = this.user.address || '';
-                
                 this.updateProfileStats();
                 window.scrollTo(0, 0);
             },
@@ -1394,26 +997,18 @@
                     document.getElementById('profileFavorites').textContent = this.favorites.length;
                     const spent = orders.reduce((sum, o) => sum + o.total, 0);
                     document.getElementById('profileSpent').textContent = '$' + spent.toFixed(0);
-                } catch (e) {
-                    console.error(e);
-                }
+                } catch (e) { console.error(e); }
             },
 
             async saveProfile() {
                 try {
-                    const updates = {
-                        name: document.getElementById('editName').value,
-                        phone: document.getElementById('editPhone').value,
-                        address: document.getElementById('editAddress').value
-                    };
+                    const updates = { name: document.getElementById('editName').value, phone: document.getElementById('editPhone').value, address: document.getElementById('editAddress').value };
                     const updated = await API.updateProfile(this.token, updates);
                     this.user = updated;
                     this.saveSession();
                     this.updateAuthUI();
                     this.showToast('Profile updated successfully');
-                } catch (e) {
-                    this.showToast(e.message, 'error');
-                }
+                } catch (e) { this.showToast(e.message, 'error'); }
             },
 
             showAddresses() {
@@ -1421,7 +1016,6 @@
             },
 
             // ==================== MENU ====================
-
             showSkeleton() {
                 document.getElementById('loadingSkeleton').classList.remove('hidden');
                 document.getElementById('menuGrid').classList.add('hidden');
@@ -1439,15 +1033,7 @@
                     const isBiriyani = cat.id === 'biriyani';
                     const activeClass = isBiriyani ? 'category-biriyani-active' : 'category-active';
                     const inactiveClass = isBiriyani ? 'bg-gradient-to-r from-biriyani to-biriyani-dark text-white' : 'bg-white text-gray-600 hover:bg-gray-100';
-                    
-                    return `
-                        <button onclick="app.setCategory('${cat.id}')" 
-                            class="flex items-center gap-2 px-6 py-3 rounded-full font-medium whitespace-nowrap transition-all transform active:scale-95 ${isActive ? activeClass : inactiveClass + ' shadow-sm'}">
-                            <i class="fas ${cat.icon}"></i>
-                            ${cat.name}
-                            ${isBiriyani ? '<span class="ml-1 text-xs bg-white/30 px-2 py-0.5 rounded-full">NEW</span>' : ''}
-                        </button>
-                    `;
+                    return `<button onclick="app.setCategory('${cat.id}')" class="flex items-center gap-2 px-6 py-3 rounded-full font-medium whitespace-nowrap transition-all transform active:scale-95 ${isActive ? activeClass : inactiveClass + ' shadow-sm'}"><i class="fas ${cat.icon}"></i> ${cat.name} ${isBiriyani ? '<span class="ml-1 text-xs bg-white/30 px-2 py-0.5 rounded-full">NEW</span>' : ''}</button>`;
                 }).join('');
             },
 
@@ -1455,9 +1041,7 @@
                 this.currentCategory = id;
                 this.renderCategories();
                 this.renderMenu();
-                if (id === 'biriyani') {
-                    this.showToast('Welcome to our Biriyani Collection! 🍛');
-                }
+                if (id === 'biriyani') this.showToast('Welcome to our Biriyani Collection! 🍛');
             },
 
             debounceSearch(query) {
@@ -1470,28 +1054,16 @@
 
             getSpiceLevelHTML(level) {
                 if (!level) return '';
-                const peppers = Array(3).fill(0).map((_, i) => 
-                    `<i class="fas fa-pepper-hot ${i < level ? 'text-red-500' : 'text-gray-300'} text-xs"></i>`
-                ).join('');
+                const peppers = Array(3).fill(0).map((_, i) => `<i class="fas fa-pepper-hot ${i < level ? 'text-red-500' : 'text-gray-300'} text-xs"></i>`).join('');
                 return `<div class="flex gap-0.5 ml-2" title="Spice Level: ${level}/3">${peppers}</div>`;
             },
 
             renderMenu() {
                 const grid = document.getElementById('menuGrid');
                 const emptyState = document.getElementById('emptyState');
-                
                 let filtered = menuItems;
-                
-                if (this.currentCategory !== 'all') {
-                    filtered = filtered.filter(item => item.category === this.currentCategory);
-                }
-                
-                if (this.searchQuery) {
-                    filtered = filtered.filter(item => 
-                        item.name.toLowerCase().includes(this.searchQuery) ||
-                        item.description.toLowerCase().includes(this.searchQuery)
-                    );
-                }
+                if (this.currentCategory !== 'all') filtered = filtered.filter(item => item.category === this.currentCategory);
+                if (this.searchQuery) filtered = filtered.filter(item => item.name.toLowerCase().includes(this.searchQuery) || item.description.toLowerCase().includes(this.searchQuery));
 
                 if (filtered.length === 0) {
                     grid.innerHTML = '';
@@ -1504,40 +1076,24 @@
                     const isBiriyani = item.category === 'biriyani';
                     const cardBorder = isBiriyani ? 'ring-2 ring-biriyani/20' : '';
                     const spiceIndicator = this.getSpiceLevelHTML(item.spiceLevel);
-                    
                     return `
                         <div class="food-card bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group cursor-pointer ${cardBorder}" onclick="app.openFoodModal(${item.id})">
                             <div class="relative overflow-hidden h-48">
                                 <img src="${item.image}" alt="${item.name}" class="food-image w-full h-full object-cover transition-transform duration-500" loading="lazy">
-                                <div class="absolute top-3 left-3 flex gap-2">
-                                    ${item.tags.map(tag => `<span class="px-2 py-1 bg-white/90 backdrop-blur text-xs font-medium rounded-lg shadow-sm">${tag}</span>`).join('')}
-                                </div>
-                                <button onclick="event.stopPropagation(); app.toggleFavorite(${item.id})" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-sm hover:bg-white transition-colors">
-                                    <i class="fas fa-heart ${this.favorites.includes(item.id) ? 'text-red-500' : 'text-gray-400'}"></i>
-                                </button>
-                                <div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-medium shadow-sm">
-                                    <i class="fas fa-clock mr-1 ${isBiriyani ? 'text-biriyani-dark' : 'text-primary'}"></i>${item.time}
-                                </div>
+                                <div class="absolute top-3 left-3 flex gap-2">${item.tags.map(tag => `<span class="px-2 py-1 bg-white/90 backdrop-blur text-xs font-medium rounded-lg shadow-sm">${tag}</span>`).join('')}</div>
+                                <button onclick="event.stopPropagation(); app.toggleFavorite(${item.id})" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-sm hover:bg-white transition-colors"><i class="fas fa-heart ${this.favorites.includes(item.id) ? 'text-red-500' : 'text-gray-400'}"></i></button>
+                                <div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-medium shadow-sm"><i class="fas fa-clock mr-1 ${isBiriyani ? 'text-biriyani-dark' : 'text-primary'}"></i>${item.time}</div>
                                 ${isBiriyani ? `<div class="absolute bottom-3 left-3 bg-biriyani-dark/90 backdrop-blur text-white px-2 py-1 rounded-lg text-xs font-medium shadow-sm">🍛 Authentic</div>` : ''}
                             </div>
                             <div class="p-5">
                                 <div class="flex justify-between items-start mb-2">
-                                    <div class="flex items-center">
-                                        <h3 class="font-bold text-lg text-dark group-hover:text-primary transition-colors">${item.name}</h3>
-                                        ${spiceIndicator}
-                                    </div>
+                                    <div class="flex items-center"><h3 class="font-bold text-lg text-dark group-hover:text-primary transition-colors">${item.name}</h3>${spiceIndicator}</div>
                                     <span class="font-bold ${isBiriyani ? 'text-biriyani-dark' : 'text-primary'} text-lg">$${item.price.toFixed(2)}</span>
                                 </div>
                                 <p class="text-gray-500 text-sm mb-3 line-clamp-2">${item.description}</p>
                                 <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-1 text-sm">
-                                        <i class="fas fa-star text-yellow-400"></i>
-                                        <span class="font-medium">${item.rating}</span>
-                                        <span class="text-gray-400">(${item.reviews})</span>
-                                    </div>
-                                    <button onclick="event.stopPropagation(); app.addToCart(${item.id})" class="w-10 h-10 rounded-full ${isBiriyani ? 'bg-biriyani-dark hover:bg-biriyani' : 'bg-primary hover:bg-orange-600'} text-white flex items-center justify-center transition-all transform active:scale-90 shadow-lg ${isBiriyani ? 'shadow-biriyani/30' : 'shadow-primary/30'}">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
+                                    <div class="flex items-center gap-1 text-sm"><i class="fas fa-star text-yellow-400"></i><span class="font-medium">${item.rating}</span><span class="text-gray-400">(${item.reviews})</span></div>
+                                    <button onclick="event.stopPropagation(); app.addToCart(${item.id})" class="w-10 h-10 rounded-full ${isBiriyani ? 'bg-biriyani-dark hover:bg-biriyani' : 'bg-primary hover:bg-orange-600'} text-white flex items-center justify-center transition-all transform active:scale-90 shadow-lg ${isBiriyani ? 'shadow-biriyani/30' : 'shadow-primary/30'}"><i class="fas fa-plus"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -1553,12 +1109,8 @@
                         <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group cursor-pointer" onclick="app.applyDeal('${deal.code}')">
                             <div class="relative h-48 overflow-hidden">
                                 <img src="${deal.image}" alt="${deal.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
-                                <div class="absolute top-4 left-4 ${isBiriyani ? 'bg-biriyani-dark' : 'bg-primary'} text-white px-3 py-1 rounded-full font-bold text-sm">
-                                    ${deal.discount}
-                                </div>
-                                <div class="absolute bottom-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-medium">
-                                    Valid: ${deal.validUntil}
-                                </div>
+                                <div class="absolute top-4 left-4 ${isBiriyani ? 'bg-biriyani-dark' : 'bg-primary'} text-white px-3 py-1 rounded-full font-bold text-sm">${deal.discount}</div>
+                                <div class="absolute bottom-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-medium">Valid: ${deal.validUntil}</div>
                             </div>
                             <div class="p-6">
                                 <h3 class="font-bold text-xl mb-2">${deal.title}</h3>
@@ -1574,14 +1126,11 @@
             },
 
             // ==================== MODAL & CART ====================
-
             openFoodModal(id) {
                 const item = menuItems.find(i => i.id === id);
                 if (!item) return;
-                
                 this.currentModalItem = item;
                 this.modalQty = 1;
-                
                 const isBiriyani = item.category === 'biriyani';
                 
                 document.getElementById('modalImage').src = item.image;
@@ -1634,13 +1183,9 @@
             addToCart(id, qty = 1, notes = '') {
                 const item = menuItems.find(i => i.id === id);
                 if (!item) return;
-                
                 const existing = this.cart.find(c => c.id === id && c.notes === notes);
-                if (existing) {
-                    existing.qty += qty;
-                } else {
-                    this.cart.push({ ...item, qty, notes });
-                }
+                if (existing) existing.qty += qty;
+                else this.cart.push({ ...item, qty, notes });
                 
                 this.saveCart();
                 this.updateCartUI();
@@ -1669,7 +1214,6 @@
                 const items = document.getElementById('cartItems');
                 const empty = document.getElementById('cartEmpty');
                 const footer = document.getElementById('cartFooter');
-                
                 const totalItems = this.cart.reduce((sum, item) => sum + item.qty, 0);
                 
                 if (totalItems > 0) {
@@ -1692,10 +1236,7 @@
                             <img src="${item.image}" class="w-20 h-20 rounded-lg object-cover" alt="${item.name}">
                             <div class="flex-1">
                                 <div class="flex justify-between items-start mb-1">
-                                    <div>
-                                        <h4 class="font-semibold text-sm">${item.name}</h4>
-                                        ${isBiriyani ? '<span class="text-xs text-biriyani-dark font-medium">🍛 Biriyani</span>' : ''}
-                                    </div>
+                                    <div><h4 class="font-semibold text-sm">${item.name}</h4>${isBiriyani ? '<span class="text-xs text-biriyani-dark font-medium">🍛 Biriyani</span>' : ''}</div>
                                     <button onclick="app.removeFromCart(${index})" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt text-sm"></i></button>
                                 </div>
                                 ${item.notes ? `<p class="text-xs text-gray-500 mb-2 italic">"${item.notes}"</p>` : ''}
@@ -1726,7 +1267,6 @@
             toggleCart() {
                 const overlay = document.getElementById('cartOverlay');
                 const sidebar = document.getElementById('cartSidebar');
-                
                 if (overlay.classList.contains('hidden')) {
                     overlay.classList.remove('hidden');
                     sidebar.classList.remove('translate-x-full');
@@ -1739,11 +1279,9 @@
             },
 
             // ==================== CHECKOUT ====================
-
             checkout() {
                 if (this.cart.length === 0) return;
                 if (!this.user) { this.showAuth(); return; }
-                
                 this.toggleCart();
                 
                 const subtotal = this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -1751,12 +1289,9 @@
                 const tax = subtotal * 0.08;
                 const total = subtotal + delivery + tax;
 
-                // Populate address select
                 const addrSelect = document.getElementById('addressSelect');
                 addrSelect.innerHTML = '<option value="">Select saved address...</option>';
-                if (this.user.address) {
-                    addrSelect.innerHTML += `<option value="${this.user.address}">${this.user.address}</option>`;
-                }
+                if (this.user.address) addrSelect.innerHTML += `<option value="${this.user.address}">${this.user.address}</option>`;
                 
                 document.getElementById('checkoutItems').textContent = `${this.cart.reduce((sum, item) => sum + item.qty, 0)} items`;
                 document.getElementById('checkoutSubtotal').textContent = `$${subtotal.toFixed(2)}`;
@@ -1783,7 +1318,6 @@
                 const btn = document.getElementById('placeOrderBtn');
                 const spinner = document.getElementById('orderSpinner');
                 const btnText = btn.querySelector('span');
-                
                 btn.disabled = true;
                 spinner.classList.remove('hidden');
                 btnText.textContent = 'Placing Order...';
@@ -1791,10 +1325,7 @@
                 try {
                     const address = document.getElementById('addressInput').value || document.getElementById('addressSelect').value;
                     const phone = document.getElementById('phoneInput').value;
-                    
-                    if (!address || !phone) {
-                        throw new Error('Please fill in all fields');
-                    }
+                    if (!address || !phone) throw new Error('Please fill in all fields');
 
                     const subtotal = this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
                     const delivery = 2.99;
@@ -1802,31 +1333,18 @@
                     const total = subtotal + delivery + tax;
 
                     const orderData = {
-                        items: this.cart.map(item => ({
-                            id: item.id,
-                            name: item.name,
-                            price: item.price,
-                            qty: item.qty,
-                            notes: item.notes,
-                            category: item.category
-                        })),
-                        address,
-                        phone,
+                        items: this.cart.map(item => ({ id: item.id, name: item.name, price: item.price, qty: item.qty, notes: item.notes, category: item.category })),
+                        address, phone,
                         paymentMethod: document.getElementById('paymentMethod').value,
-                        subtotal,
-                        delivery,
-                        tax,
-                        total
+                        subtotal, delivery, tax, total
                     };
 
                     const order = await API.createOrder(this.token, orderData);
-                    
                     this.cart = [];
                     this.saveCart();
                     this.updateCartUI();
                     this.closeCheckout();
 
-                    // Show tracking
                     this.liveOrderId = order.id;
                     document.getElementById('trackingOrderId').textContent = order.id;
                     this.renderTrackingTimeline(order);
@@ -1855,9 +1373,9 @@
             renderTrackingTimeline(order) {
                 const steps = [
                     { status: 'received', label: 'Order Received', icon: 'fa-check', active: true },
-                    { status: 'preparing', label: 'Preparing', icon: 'fa-fire', active: order.status === 'preparing' || order.status === 'ready' || order.status === 'out_for_delivery' || order.status === 'delivered' },
-                    { status: 'ready', label: 'Ready for Pickup', icon: 'fa-box', active: order.status === 'ready' || order.status === 'out_for_delivery' || order.status === 'delivered' },
-                    { status: 'out_for_delivery', label: 'Out for Delivery', icon: 'fa-motorcycle', active: order.status === 'out_for_delivery' || order.status === 'delivered' },
+                    { status: 'preparing', label: 'Preparing', icon: 'fa-fire', active: true },
+                    { status: 'ready', label: 'Ready for Pickup', icon: 'fa-box', active: ['ready', 'out_for_delivery', 'delivered'].includes(order.status) },
+                    { status: 'out_for_delivery', label: 'Out for Delivery', icon: 'fa-motorcycle', active: ['out_for_delivery', 'delivered'].includes(order.status) },
                     { status: 'delivered', label: 'Delivered', icon: 'fa-home', active: order.status === 'delivered' }
                 ];
 
@@ -1884,7 +1402,6 @@
             },
 
             // ==================== LIVE TRACKING ====================
-
             showLiveTracking() {
                 const bar = document.getElementById('liveTracking');
                 bar.classList.remove('translate-y-full');
@@ -1897,12 +1414,7 @@
                 bar.classList.add('translate-y-full');
             },
 
-            showLiveTrackingDetail() {
-                this.showToast('Full map tracking coming in v2.0');
-            },
-
             // ==================== ORDERS ====================
-
             async showOrders() {
                 if (!this.user) { this.showAuth(); return; }
                 this.hideAllSections();
@@ -1919,12 +1431,8 @@
                 
                 try {
                     let orders = await API.getOrders(this.token);
-                    
-                    if (this.currentOrderFilter === 'active') {
-                        orders = orders.filter(o => ['preparing', 'ready', 'out_for_delivery'].includes(o.status));
-                    } else if (this.currentOrderFilter === 'completed') {
-                        orders = orders.filter(o => o.status === 'delivered');
-                    }
+                    if (this.currentOrderFilter === 'active') orders = orders.filter(o => ['preparing', 'ready', 'out_for_delivery'].includes(o.status));
+                    else if (this.currentOrderFilter === 'completed') orders = orders.filter(o => o.status === 'delivered');
                     
                     if (orders.length === 0) {
                         list.innerHTML = '';
@@ -1955,9 +1463,7 @@
                                             </div>
                                             <p class="text-sm text-gray-500">${date.toLocaleDateString()} at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                                         </div>
-                                        <span class="px-3 py-1 rounded-full text-xs font-medium ${status.color} flex items-center gap-1">
-                                            <i class="fas ${status.icon}"></i> ${status.label}
-                                        </span>
+                                        <span class="px-3 py-1 rounded-full text-xs font-medium ${status.color} flex items-center gap-1"><i class="fas ${status.icon}"></i> ${status.label}</span>
                                     </div>
                                     <div class="space-y-2 mb-4">
                                         ${order.items.map(item => `
@@ -1968,22 +1474,14 @@
                                         `).join('')}
                                     </div>
                                     <div class="border-t border-gray-100 pt-4 flex justify-between items-center">
-                                        <div class="text-sm text-gray-500">
-                                            <i class="fas fa-map-marker-alt mr-1"></i> ${order.address}
-                                        </div>
+                                        <div class="text-sm text-gray-500"><i class="fas fa-map-marker-alt mr-1"></i> ${order.address}</div>
                                         <span class="font-bold text-lg text-primary">$${order.total.toFixed(2)}</span>
                                     </div>
                                 </div>
                                 ${['preparing', 'ready', 'out_for_delivery'].includes(order.status) ? `
                                     <div class="px-6 py-3 bg-gray-50 border-t border-gray-100">
-                                        <div class="flex justify-between text-xs text-gray-500 mb-1">
-                                            <span>Received</span>
-                                            <span>Preparing</span>
-                                            <span>Delivery</span>
-                                        </div>
-                                        <div class="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                            <div class="h-full bg-primary rounded-full transition-all duration-1000" style="width: ${order.status === 'preparing' ? '33%' : order.status === 'ready' ? '66%' : '90%'}"></div>
-                                        </div>
+                                        <div class="flex justify-between text-xs text-gray-500 mb-1"><span>Received</span><span>Preparing</span><span>Delivery</span></div>
+                                        <div class="h-1.5 bg-gray-200 rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full transition-all duration-1000" style="width: ${order.status === 'preparing' ? '33%' : order.status === 'ready' ? '66%' : '90%'}"></div></div>
                                     </div>
                                 ` : ''}
                             </div>
@@ -1996,7 +1494,6 @@
 
             filterOrders(filter) {
                 this.currentOrderFilter = filter;
-                // Update button styles
                 const buttons = document.querySelectorAll('#ordersSection button');
                 buttons.forEach(btn => {
                     if (btn.textContent.toLowerCase() === filter || (filter === 'all' && btn.textContent === 'All')) {
@@ -2010,15 +1507,8 @@
 
             onOrderUpdate(order) {
                 if (this.liveOrderId === order.id) {
-                    // Update live tracking bar
-                    const statusText = {
-                        'preparing': 'Preparing your order...',
-                        'ready': 'Order ready for pickup!',
-                        'out_for_delivery': 'Driver is on the way!',
-                        'delivered': 'Order delivered! Enjoy!'
-                    };
+                    const statusText = { 'preparing': 'Preparing your order...', 'ready': 'Order ready for pickup!', 'out_for_delivery': 'Driver is on the way!', 'delivered': 'Order delivered! Enjoy!' };
                     document.getElementById('liveStatus').textContent = statusText[order.status] || order.status;
-                    
                     const progressMap = { 'preparing': 25, 'ready': 50, 'out_for_delivery': 75, 'delivered': 100 };
                     document.getElementById('liveProgress').style.width = progressMap[order.status] + '%';
                     
@@ -2029,16 +1519,11 @@
                     } else {
                         this.showToast(`Order update: ${statusText[order.status]}`);
                     }
-                    
-                    // Refresh orders list if visible
-                    if (!document.getElementById('ordersSection').classList.contains('hidden')) {
-                        this.renderOrders();
-                    }
+                    if (!document.getElementById('ordersSection').classList.contains('hidden')) this.renderOrders();
                 }
             },
 
             checkActiveOrders() {
-                // Check if there's an active order to show live tracking
                 if (this.user) {
                     API.getOrders(this.token).then(orders => {
                         const active = orders.find(o => ['preparing', 'ready', 'out_for_delivery'].includes(o.status));
@@ -2051,7 +1536,6 @@
             },
 
             // ==================== FAVORITES ====================
-
             showFavorites() {
                 this.hideAllSections();
                 document.getElementById('favoritesSection').classList.remove('hidden');
@@ -2064,7 +1548,6 @@
             renderFavorites() {
                 const grid = document.getElementById('favoritesGrid');
                 const noFavorites = document.getElementById('noFavorites');
-                
                 const favItems = menuItems.filter(item => this.favorites.includes(item.id));
                 
                 if (favItems.length === 0) {
@@ -2080,9 +1563,7 @@
                         <div class="food-card bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group">
                             <div class="relative overflow-hidden h-48">
                                 <img src="${item.image}" alt="${item.name}" class="food-image w-full h-full object-cover transition-transform duration-500" loading="lazy">
-                                <button onclick="app.toggleFavorite(${item.id})" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-sm hover:bg-white transition-colors">
-                                    <i class="fas fa-heart text-red-500"></i>
-                                </button>
+                                <button onclick="app.toggleFavorite(${item.id})" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-sm hover:bg-white transition-colors"><i class="fas fa-heart text-red-500"></i></button>
                             </div>
                             <div class="p-5">
                                 <div class="flex justify-between items-start mb-2">
@@ -2090,9 +1571,7 @@
                                     <span class="font-bold ${isBiriyani ? 'text-biriyani-dark' : 'text-primary'}">$${item.price.toFixed(2)}</span>
                                 </div>
                                 <p class="text-gray-500 text-sm mb-3">${item.description}</p>
-                                <button onclick="app.addToCart(${item.id})" class="w-full py-2 ${isBiriyani ? 'bg-biriyani-dark hover:bg-biriyani' : 'bg-primary hover:bg-orange-600'} text-white rounded-full font-medium transition-colors">
-                                    Add to Cart
-                                </button>
+                                <button onclick="app.addToCart(${item.id})" class="w-full py-2 ${isBiriyani ? 'bg-biriyani-dark hover:bg-biriyani' : 'bg-primary hover:bg-orange-600'} text-white rounded-full font-medium transition-colors">Add to Cart</button>
                             </div>
                         </div>
                     `;
@@ -2110,13 +1589,10 @@
                 }
                 this.saveFavorites();
                 this.renderMenu();
-                if (!document.getElementById('favoritesSection').classList.contains('hidden')) {
-                    this.renderFavorites();
-                }
+                if (!document.getElementById('favoritesSection').classList.contains('hidden')) this.renderFavorites();
             },
 
             // ==================== CHAT ====================
-
             showChat() {
                 document.getElementById('chatWidget').classList.remove('hidden');
                 document.getElementById('chatToggleBtn').classList.add('hidden');
@@ -2140,19 +1616,10 @@
                 if (!message) return;
 
                 const container = document.getElementById('chatMessages');
-                
-                // User message
-                container.innerHTML += `
-                    <div class="flex gap-2 justify-end">
-                        <div class="bg-primary text-white p-3 rounded-2xl rounded-tr-none shadow-sm text-sm max-w-[80%]">
-                            ${message}
-                        </div>
-                    </div>
-                `;
+                container.innerHTML += `<div class="flex gap-2 justify-end"><div class="bg-primary text-white p-3 rounded-2xl rounded-tr-none shadow-sm text-sm max-w-[80%]">${message}</div></div>`;
                 input.value = '';
                 container.scrollTop = container.scrollHeight;
 
-                // Simulate response
                 setTimeout(() => {
                     const responses = [
                         "Thanks for reaching out! Our team will get back to you shortly.",
@@ -2162,21 +1629,12 @@
                         "Is there anything else I can help you with today?"
                     ];
                     const response = responses[Math.floor(Math.random() * responses.length)];
-                    
-                    container.innerHTML += `
-                        <div class="flex gap-2">
-                            <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs flex-shrink-0">CS</div>
-                            <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm max-w-[80%]">
-                                ${response}
-                            </div>
-                        </div>
-                    `;
+                    container.innerHTML += `<div class="flex gap-2"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs flex-shrink-0">CS</div><div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm max-w-[80%]">${response}</div></div>`;
                     container.scrollTop = container.scrollHeight;
                 }, 1000 + Math.random() * 2000);
             },
 
             // ==================== DEALS & STATS ====================
-
             showDeals() {
                 this.hideAllSections();
                 document.getElementById('dealsSection').classList.remove('hidden');
@@ -2195,19 +1653,15 @@
                     const stats = await API.getStats();
                     document.getElementById('statUsers').textContent = stats.activeUsers;
                     document.getElementById('statOrders').textContent = stats.todayOrders;
-                } catch (e) {
-                    console.error(e);
-                }
+                } catch (e) { console.error(e); }
             },
 
             // ==================== NOTIFICATIONS ====================
-
             showNotifications() {
                 this.showToast('No new notifications');
             },
 
             // ==================== NAVIGATION ====================
-
             hideAllSections() {
                 document.getElementById('menuSection').classList.add('hidden');
                 document.getElementById('ordersSection').classList.add('hidden');
@@ -2237,24 +1691,18 @@
             },
 
             // ==================== UTILITIES ====================
-
             showToast(message, type = 'success') {
                 const toast = document.getElementById('toast');
                 const msgEl = document.getElementById('toastMessage');
                 const icon = toast.querySelector('i');
-                
                 msgEl.textContent = message;
                 icon.className = type === 'error' ? 'fas fa-exclamation-circle text-red-400' : 'fas fa-check-circle text-green-400';
-                
                 toast.classList.remove('translate-y-20', 'opacity-0');
-                setTimeout(() => {
-                    toast.classList.add('translate-y-20', 'opacity-0');
-                }, 3000);
+                setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
             }
         };
 
         // ==================== INITIALIZATION ====================
-
         document.addEventListener('DOMContentLoaded', () => app.init());
 
         document.addEventListener('keydown', (e) => {
@@ -2262,19 +1710,14 @@
                 app.closeModal();
                 app.closeCheckout();
                 app.closeTracking();
-                if (!document.getElementById('cartOverlay').classList.contains('hidden')) {
-                    app.toggleCart();
-                }
+                if (!document.getElementById('cartOverlay').classList.contains('hidden')) app.toggleCart();
             }
         });
 
         window.addEventListener('scroll', () => {
             const navbar = document.getElementById('navbar');
-            if (window.scrollY > 50) {
-                navbar.classList.add('shadow-md');
-            } else {
-                navbar.classList.remove('shadow-md');
-            }
+            if (window.scrollY > 50) navbar.classList.add('shadow-md');
+            else navbar.classList.remove('shadow-md');
         });
     </script>
 </body>
