@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crave — Full Stack Food Ordering System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50 font-sans text-dark antialiased">
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-8 relative">
+            <button onclick="app.closeAuth()" class="absolute top-4 right-4 text-gray-400 hover:text-dark"><i class="fas fa-times text-xl"></i></button>
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white text-2xl mx-auto mb-4"><i class="fas fa-utensils"></i></div>
+                <h2 class="text-2xl font-bold" id="authTitle">Welcome Back</h2>
+                <p class="text-gray-500 text-sm mt-1" id="authSubtitle">Sign in to order your favorites</p>
+            </div>
+            <form id="authForm" onsubmit="app.handleAuth(event)" class="space-y-4">
+                <div id="nameField" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input type="text" id="authName" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="John Doe">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="authEmail" required class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="you@example.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="authPassword" required class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="••••••••">
+                </div>
+                <div id="phoneField" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input type="tel" id="authPhone" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="(555) 123-4567">
+                </div>
+                <button type="submit" id="authSubmitBtn" class="w-full py-3 bg-primary text-white rounded-xl font-semibold hover:bg-orange-600 transition-all">
+                    <span id="authBtnText">Sign In</span>
+                    <i id="authBtnIcon" class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </form>
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-500">
+                    <span id="authToggleText">Don't have an account?</span>
+                    <button onclick="app.toggleAuthMode()" class="text-primary font-semibold ml-1 hover:underline" id="authToggleBtn">Sign Up</button>
+                </p>
+            </div>
+            <div class="mt-6 pt-6 border-t border-gray-100">
+                <p class="text-xs text-center text-gray-400 mb-3">Or continue with</p>
+                <div class="flex gap-3">
+                    <button onclick="app.socialAuth('google')" class="flex-1 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                        <i class="fab fa-google text-red-500"></i> Google
+                    </button>
+                    <button onclick="app.socialAuth('github')" class="flex-1 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                        <i class="fab fa-github"></i> GitHub
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-40 glass-effect border-b border-gray-200 transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2 cursor-pointer" onclick="app.goHome()">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center text-white font-bold text-xl">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <span class="font-serif text-2xl font-bold text-dark">Crave</span>
+                    <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 ml-2">
+                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse"></span> Live
+                    </span>
+                </div>
+                
+                <div class="hidden md:flex items-center gap-8">
+                    <button onclick="app.goHome()" class="text-gray-600 hover:text-primary font-medium transition-colors">Menu</button>
+                    <button onclick="app.showOrders()" class="text-gray-600 hover:text-primary font-medium transition-colors">My Orders</button>
+                    <button onclick="app.showFavorites()" class="text-gray-600 hover:text-primary font-medium transition-colors">Favorites</button>
+                    <button onclick="app.showChat()" class="text-gray-600 hover:text-primary font-medium transition-colors relative">
+                        Support
+                        <span id="chatBadge" class="hidden absolute -top-2 -right-2 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">1</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Search food..." 
+                            class="hidden md:block w-64 pl-10 pr-4 py-2 rounded-full bg-gray-100 border-none focus:ring-2 focus:ring-primary focus:bg-white transition-all text-sm"
+                            oninput="app.debounceSearch(this.value)">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 md:pointer-events-none"></i>
+                    </div>
+                    
+                    <button onclick="app.toggleCart()" class="relative p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <i class="fas fa-shopping-bag text-xl text-dark"></i>
+                        <span id="cartBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold hidden">0</span>
+                    </button>
+
+                    <div id="userSection" class="hidden items-center gap-3">
+                        <button onclick="app.showNotifications()" class="relative p-2 hover:bg-gray-100 rounded-full transition-colors">
+                            <i class="fas fa-bell text-xl text-gray-600"></i>
+                            <span id="notifBadge" class="hidden absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+                        <div class="relative group">
+                            <button class="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-gray-100 transition-colors">
+                                <img id="userAvatar" src="" class="w-8 h-8 rounded-full object-cover border-2 border-primary" alt="">
+                                <span id="userName" class="text-sm font-medium hidden lg:block"></span>
+                                <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                            </button>
+                            <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right">
+                                <div class="p-2">
+                                    <button onclick="app.showProfile()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2">
+                                        <i class="fas fa-user text-gray-400"></i> Profile
+                                    </button>
+                                    <button onclick="app.showOrders()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2">
+                                        <i class="fas fa-receipt text-gray-400"></i> My Orders
+                                    </button>
+                                    <button onclick="app.showAddresses()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2">
+                                        <i class="fas fa-map-marker-alt text-gray-400"></i> Addresses
+                                    </button>
+                                    <div class="border-t border-gray-100 my-1"></div>
+                                    <button onclick="app.logout()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-sm text-red-600 flex items-center gap-2">
+                                        <i class="fas fa-sign-out-alt"></i> Sign Out
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="loginBtn" onclick="app.showAuth()" class="hidden px-4 py-2 bg-primary text-white rounded-full text-sm font-medium hover:bg-orange-600 transition-colors">
+                        Sign In
+                    </button>
+                    
+                    <button class="md:hidden p-2 hover:bg-gray-100 rounded-full" onclick="app.toggleMobileMenu()">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-gray-100">
+            <div class="px-4 py-3 space-y-2">
+                <button onclick="app.goHome()" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700">Menu</button>
+                <button onclick="app.showOrders()" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700">My Orders</button>
+                <button onclick="app.showFavorites()" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700">Favorites</button>
+                <button onclick="app.showChat()" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700">Support</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-16 min-h-screen">
+        
+        <!-- Hero Section -->
+        <section id="heroSection" class="relative bg-gradient-to-br from-dark via-dark-light to-dark text-white overflow-hidden">
+            <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&q=80')] bg-cover bg-center opacity-20"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-dark/80 to-transparent"></div>
+            
+            <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+                <div class="max-w-2xl animate-slide-up">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-6">
+                        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                        <span class="text-sm font-medium">Open Now • Real-time tracking</span>
+                    </div>
+                    <h1 class="font-serif text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                        Delicious Food<br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Delivered Live</span>
+                    </h1>
+                    <p class="text-lg md:text-xl text-gray-300 mb-8 leading-relaxed">
+                        Full-stack ordering with real-time updates, user accounts, and live order tracking.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <button onclick="app.scrollToMenu()" class="px-8 py-4 bg-primary hover:bg-orange-600 text-white rounded-full font-semibold transition-all transform hover:scale-105 shadow-lg shadow-primary/30">
+                            Order Now <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                        <button onclick="app.showDeals()" class="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-full font-semibold transition-all border border-white/30">
+                            Today's Deals
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Biriyani Banner -->
+        <section id="biriyaniBanner" class="bg-gradient-to-r from-biriyani-dark via-biriyani to-biriyani-dark text-white relative overflow-hidden">
+            <div class="absolute inset-0 opacity-20" style="background-image: url('https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=1920&q=80'); background-size: cover;"></div>
+            <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex items-center justify-between">
+                <div class="flex items-center gap-6">
+                    <div class="w-20 h-20 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-4xl">🍛</div>
+                    <div>
+                        <h2 class="font-serif text-3xl font-bold mb-2">Authentic Biriyani Collection</h2>
+                        <p class="text-white/80">Hyderabadi, Lucknowi, Kolkata & more — slow-cooked to perfection</p>
+                    </div>
+                </div>
+                <button onclick="app.setCategory('biriyani')" class="px-6 py-3 bg-white text-biriyani-dark rounded-full font-bold hover:bg-gray-100 transition-all shadow-lg">
+                    Explore Now
+                </button>
+            </div>
+        </section>
+
+        <!-- Stats Bar -->
+        <section class="bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex justify-center gap-8 md:gap-16 text-center">
+                    <div>
+                        <p class="text-2xl font-bold text-primary" id="statUsers">0</p>
+                        <p class="text-xs text-gray-500 uppercase tracking-wide">Active Users</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-primary" id="statOrders">0</p>
+                        <p class="text-xs text-gray-500 uppercase tracking-wide">Orders Today</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-primary" id="statDelivery">25</p>
+                        <p class="text-xs text-gray-500 uppercase tracking-wide">Min Delivery</p>
+                    </div>
+                    <div class="hidden sm:block">
+                        <p class="text-2xl font-bold text-primary" id="statRating">4.9</p>
+                        <p class="text-xs text-gray-500 uppercase tracking-wide">Rating</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Menu Section -->
+        <section id="menuSection" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="sticky top-16 z-30 bg-gray-50/95 backdrop-blur-sm py-4 -mx-4 px-4 mb-8">
+                <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2" id="categoryContainer"></div>
+            </div>
+
+            <div id="loadingSkeleton" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Skeleton items injected by JS -->
+            </div>
+
+            <div id="menuGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="emptyState" class="hidden text-center py-20">
+                <div class="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-search text-3xl text-gray-400"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">No items found</h3>
+                <p class="text-gray-500">Try adjusting your search or category filter</p>
+            </div>
+        </section>
+
+        <!-- Orders Section -->
+        <section id="ordersSection" class="hidden max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="font-serif text-3xl font-bold">My Orders</h2>
+                <div class="flex gap-2">
+                    <button onclick="app.filterOrders('all')" class="px-4 py-2 rounded-full text-sm font-medium bg-primary text-white">All</button>
+                    <button onclick="app.filterOrders('active')" class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">Active</button>
+                    <button onclick="app.filterOrders('completed')" class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">Completed</button>
+                </div>
+            </div>
+            <div id="ordersList" class="space-y-6"></div>
+            <div id="noOrders" class="hidden text-center py-20">
+                <i class="fas fa-receipt text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-700">No orders yet</h3>
+                <p class="text-gray-500 mb-6">Start ordering your favorite food!</p>
+                <button onclick="app.goHome()" class="px-6 py-3 bg-primary text-white rounded-full font-semibold hover:bg-orange-600 transition-colors">Browse Menu</button>
+            </div>
+        </section>
+
+        <!-- Favorites Section -->
+        <section id="favoritesSection" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <h2 class="font-serif text-3xl font-bold mb-8">My Favorites</h2>
+            <div id="favoritesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="noFavorites" class="hidden text-center py-20">
+                <i class="fas fa-heart text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-700">No favorites yet</h3>
+                <p class="text-gray-500 mb-6">Save your favorite items for quick access</p>
+                <button onclick="app.goHome()" class="px-6 py-3 bg-primary text-white rounded-full font-semibold hover:bg-orange-600 transition-colors">Browse Menu</button>
+            </div>
+        </section>
+
+        <!-- Profile Section -->
+        <section id="profileSection" class="hidden max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <h2 class="font-serif text-3xl font-bold mb-8">My Profile</h2>
+            <div class="bg-white rounded-2xl shadow-sm p-8 space-y-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-3xl text-primary">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold" id="profileName">User</h3>
+                        <p class="text-gray-500" id="profileEmail">user@example.com</p>
+                        <p class="text-sm text-gray-400 mt-1">Member since <span id="profileJoinDate">2026</span></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <p class="text-2xl font-bold text-primary" id="profileOrders">0</p>
+                        <p class="text-xs text-gray-500">Orders</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <p class="text-2xl font-bold text-primary" id="profileFavorites">0</p>
+                        <p class="text-xs text-gray-500">Favorites</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <p class="text-2xl font-bold text-primary" id="profileSpent">$0</p>
+                        <p class="text-xs text-gray-500">Total Spent</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <h4 class="font-semibold">Account Settings</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
+                            <input type="text" id="editName" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                            <input type="tel" id="editPhone" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Default Address</label>
+                            <textarea id="editAddress" rows="2" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary resize-none"></textarea>
+                        </div>
+                    </div>
+                    <button onclick="app.saveProfile()" class="w-full py-3 bg-primary text-white rounded-xl font-semibold hover:bg-orange-600 transition-colors">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chat Support -->
+        <div id="chatWidget" class="fixed bottom-6 right-6 z-40 hidden">
+            <div class="bg-white rounded-2xl shadow-2xl w-80 md:w-96 overflow-hidden border border-gray-200">
+                <div class="bg-primary p-4 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-headset text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-semibold">Live Support</h3>
+                            <p class="text-white/70 text-xs flex items-center gap-1">
+                                <span class="w-2 h-2 bg-green-400 rounded-full"></span> Online
+                            </p>
+                        </div>
+                    </div>
+                    <button onclick="app.toggleChat()" class="text-white/70 hover:text-white"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="chatMessages" class="h-80 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                    <div class="flex gap-2">
+                        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs flex-shrink-0">CS</div>
+                        <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm max-w-[80%]">
+                            Hi! Welcome to Crave. How can I help you today?
+                        </div>
+                    </div>
+                </div>
+                <div class="p-3 bg-white border-t border-gray-100">
+                    <form onsubmit="app.sendChat(event)" class="flex gap-2">
+                        <input type="text" id="chatInput" class="flex-1 p-2 border border-gray-200 rounded-full text-sm focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Type a message...">
+                        <button type="submit" class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center hover:bg-orange-600 transition-colors">
+                            <i class="fas fa-paper-plane text-sm"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <button onclick="app.toggleChat()" id="chatToggleBtn" class="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center text-xl hover:bg-orange-600 transition-all transform hover:scale-110 z-40">
+            <i class="fas fa-comment-dots"></i>
+        </button>
+
+        <!-- Deals Section -->
+        <section id="dealsSection" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <h2 class="font-serif text-3xl font-bold mb-8">Today's Special Deals</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="dealsGrid"></div>
+        </section>
+    </main>
+
+    <!-- Cart Sidebar -->
+    <div id="cartOverlay" class="fixed inset-0 bg-black/50 z-50 hidden transition-opacity duration-300 opacity-0" onclick="app.toggleCart()"></div>
+    <div id="cartSidebar" class="fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <h2 class="text-xl font-bold flex items-center gap-2">
+                <i class="fas fa-shopping-bag text-primary"></i>
+                Your Cart
+                <span id="cartCount" class="text-sm font-normal text-gray-500">(0 items)</span>
+            </h2>
+            <button onclick="app.toggleCart()" class="p-2 hover:bg-gray-200 rounded-full transition-colors"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <div id="cartItems" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+        <div id="cartEmpty" class="hidden flex-1 flex flex-col items-center justify-center p-6 text-center">
+            <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4"><i class="fas fa-shopping-basket text-3xl text-gray-400"></i></div>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Your cart is empty</h3>
+            <button onclick="app.toggleCart()" class="px-6 py-2 bg-primary text-white rounded-full font-medium hover:bg-orange-600 transition-colors">Browse Menu</button>
+        </div>
+        <div id="cartFooter" class="p-6 border-t border-gray-100 bg-gray-50 space-y-4">
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between text-gray-600"><span>Subtotal</span><span id="subtotal">$0.00</span></div>
+                <div class="flex justify-between text-gray-600"><span>Delivery Fee</span><span id="deliveryFee">$2.99</span></div>
+                <div class="flex justify-between text-gray-600"><span>Tax (8%)</span><span id="tax">$0.00</span></div>
+                <div class="border-t border-gray-200 pt-2 flex justify-between font-bold text-lg text-dark"><span>Total</span><span id="totalPrice">$0.00</span></div>
+            </div>
+            <button onclick="app.checkout()" id="checkoutBtn" class="w-full py-4 bg-primary hover:bg-orange-600 text-white rounded-xl font-bold text-lg transition-all transform active:scale-95 shadow-lg shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed">
+                Proceed to Checkout
+            </button>
+        </div>
+    </div>
+
+    <!-- Food Detail Modal -->
+    <div id="foodModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300" id="foodModalContent">
+            <div class="relative">
+                <img id="modalImage" src="" class="w-full h-64 object-cover" alt="">
+                <button onclick="app.closeModal()" class="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"><i class="fas fa-times text-dark"></i></button>
+                <div class="absolute bottom-4 left-4 flex gap-2"><span id="modalBadge" class="px-3 py-1 bg-primary text-white rounded-full text-sm font-medium"></span></div>
+            </div>
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 id="modalTitle" class="text-2xl font-bold mb-1"></h2>
+                        <p id="modalCategory" class="text-gray-500 text-sm"></p>
+                    </div>
+                    <div class="text-right">
+                        <p id="modalPrice" class="text-2xl font-bold text-primary"></p>
+                        <div class="flex items-center gap-1 text-sm text-gray-500"><i class="fas fa-star text-yellow-400"></i><span id="modalRating"></span></div>
+                    </div>
+                </div>
+                <p id="modalDescription" class="text-gray-600 mb-6 leading-relaxed"></p>
+                <div class="mb-6">
+                    <h3 class="font-semibold mb-3">Special Instructions</h3>
+                    <textarea id="modalNotes" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm" rows="3" placeholder="Any allergies or special requests?"></textarea>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3 bg-gray-100 rounded-full p-1">
+                        <button onclick="app.adjustModalQty(-1)" class="w-10 h-10 rounded-full bg-white shadow flex items-center justify-center hover:bg-gray-50 transition-colors"><i class="fas fa-minus text-sm"></i></button>
+                        <span id="modalQty" class="w-8 text-center font-semibold">1</span>
+                        <button onclick="app.adjustModalQty(1)" class="w-10 h-10 rounded-full bg-white shadow flex items-center justify-center hover:bg-gray-50 transition-colors"><i class="fas fa-plus text-sm"></i></button>
+                    </div>
+                    <button onclick="app.addToCartFromModal()" class="px-8 py-3 bg-primary hover:bg-orange-600 text-white rounded-full font-semibold transition-all transform active:scale-95 shadow-lg shadow-primary/30">
+                        Add to Cart - <span id="modalTotal">$0.00</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkoutModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl max-w-lg w-full transform scale-95 transition-transform duration-300" id="checkoutModalContent">
+            <div class="p-6 border-b border-gray-100">
+                <h2 class="text-2xl font-bold">Checkout</h2>
+                <p class="text-gray-500 text-sm mt-1">Complete your order</p>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
+                    <select id="addressSelect" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent mb-2">
+                        <option value="">Select saved address...</option>
+                    </select>
+                    <input type="text" id="addressInput" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Or enter new address">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                        <input type="tel" id="phoneInput" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="(555) 123-4567">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                        <select id="paymentMethod" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <option value="card">Credit Card</option>
+                            <option value="cash">Cash on Delivery</option>
+                            <option value="paypal">PayPal</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4 space-y-2">
+                    <div class="flex justify-between text-sm"><span class="text-gray-600">Items</span><span id="checkoutItems" class="font-medium">3 items</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-600">Subtotal</span><span id="checkoutSubtotal">$0.00</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-600">Delivery</span><span>$2.99</span></div>
+                    <div class="border-t border-gray-200 pt-2 flex justify-between font-bold"><span>Total</span><span id="checkoutTotal" class="text-primary">$0.00</span></div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-gray-100 flex gap-3">
+                <button onclick="app.closeCheckout()" class="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors">Cancel</button>
+                <button onclick="app.placeOrder()" id="placeOrderBtn" class="flex-1 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-orange-600 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                    <span>Place Order</span>
+                    <i class="fas fa-spinner fa-spin hidden" id="orderSpinner"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Tracking Modal -->
+    <div id="trackingModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl max-w-md w-full transform scale-95 transition-transform duration-300 overflow-hidden" id="trackingModalContent">
+            <div class="bg-primary p-6 text-white text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80')] bg-cover bg-center opacity-10"></div>
+                <div class="relative">
+                    <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                        <i class="fas fa-check text-2xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-1">Order Placed!</h2>
+                    <p class="text-white/80">Order #<<span id="trackingOrderId"></span> confirmed</p>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                    <p class="text-sm text-blue-800 flex items-center gap-2">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="trackingETA">Estimated delivery: 30-45 minutes</span>
+                    </p>
+                </div>
+                <div class="space-y-6" id="trackingSteps">
+                    <div class="relative">
+                        <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                        <div class="space-y-6 relative" id="trackingTimeline"></div>
+                    </div>
+                </div>
+                <div class="mt-6 p-4 bg-gray-50 rounded-xl">
+                    <div class="flex items-center gap-3">
+                        <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&q=80" class="w-12 h-12 rounded-full object-cover" alt="Driver">
+                        <div class="flex-1">
+                            <p class="font-semibold text-sm">Your order is being prepared</p>
+                            <p class="text-xs text-gray-500">We'll notify you when it's out for delivery</p>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="app.closeTracking()" class="w-full mt-4 py-3 bg-gray-100 hover:bg-gray-200 text-dark rounded-xl font-semibold transition-colors">
+                    Track in My Orders
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Order Tracking Overlay -->
+    <div id="liveTracking" class="fixed bottom-0 left-0 right-0 bg-white shadow-2xl border-t border-gray-200 z-30 transform translate-y-full transition-transform duration-500">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+                        <i class="fas fa-motorcycle text-primary text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-sm" id="liveStatus">Preparing your order...</p>
+                        <p class="text-xs text-gray-500" id="liveTime">Arrives in ~35 min</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="hidden sm:block w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div id="liveProgress" class="h-full bg-primary rounded-full transition-all duration-1000" style="width: 10%"></div>
+                    </div>
+                    <button onclick="app.showLiveTracking()" class="px-4 py-2 bg-primary text-white rounded-full text-sm font-medium hover:bg-orange-600 transition-colors">
+                        Track
+                    </button>
+                    <button onclick="app.hideLiveTracking()" class="p-2 hover:bg-gray-100 rounded-full">
+                        <i class="fas fa-times text-gray-400"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-dark text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 translate-y-20 opacity-0">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMessage" class="font-medium">Item added to cart</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-12 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center"><i class="fas fa-utensils text-sm"></i></div>
+                        <span class="font-serif text-xl font-bold">Crave</span>
+                    </div>
+                    <p class="text-gray-400 text-sm">Full-stack food ordering with real-time tracking and user accounts.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Partner with us</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Connect</h4>
+                    <div class="flex gap-3">
+                        <a href="#" class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"><i class="fab fa-facebook"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-sm text-gray-500">
+                © 2026 Crave. Full Stack Demo Application. Built by <a href="https://github.com/GokulRaj08" class="text-primary hover:underline">GokulRaj08</a>
+            </div>
+        </div>
+    </footer>
+
+    
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+
+</html>

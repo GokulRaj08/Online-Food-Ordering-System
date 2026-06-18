@@ -1,0 +1,15 @@
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .food-card:hover .food-image { transform: scale(1.05); }
+        .category-active { background: linear-gradient(135deg, #FF6B35 0%, #F7C59F 100%); color: white; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3); }
+        .category-biriyani-active { background: linear-gradient(135deg, #D4A574 0%, #8B4513 100%); color: white; }
+        .cart-badge { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #FF6B35; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .order-progress { transition: width 0.5s ease-in-out; }
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: skeleton 1.5s infinite; }
+        @keyframes skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    
